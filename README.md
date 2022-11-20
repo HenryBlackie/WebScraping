@@ -3,6 +3,7 @@ A collection of web scraping and data extraction scripts.
 
 # To Do List
 ## 4chan
+- [X] Show board information
 - [ ] Show catalog information
 - [ ] Show thread information
 - [ ] Export thread
