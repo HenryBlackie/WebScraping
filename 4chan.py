@@ -17,17 +17,40 @@ def parse_arguments():
         description=
         'Tool for extracting data through the read-only 4chan JSON API.')
 
+    # Create parser action group
+    # Commands within this group are mutually exclusive
+    action_group = parser.add_mutually_exclusive_group(required=True)
+
     # Configure arguments
-    parser.add_argument('-v',
-                        '-verbose',
-                        dest='verbose',
-                        action='store_true',
-                        help='Verbose logging to console. [Default: False]')
-    parser.add_argument('-sB',
-                        '--show-board',
+    action_group.add_argument(
+        '-sB',
+        '--show-board',
+        action='store_true',
+        help=
+        'Print board information and settings to console. Requires board ID (-b).'
+    )
+    action_group.add_argument(
+        '-sC',
+        '--show-catalog',
+        action='store_true',
+        help=
+        'Print board catalog to console. This includes all thread and attribute details across each page. Requires board ID (-b).'
+    )
+    action_group.add_argument(
+        '-sT',
+        '--show-thread',
+        action='store_true',
+        help='Print thread information to console. Requires thread ID (-t).')
+    parser.add_argument('-b',
                         type=str,
-                        dest='show_board',
-                        help='Display board information')
+                        dest='board_id',
+                        metavar='BOARD-ID',
+                        help='Board ID.')
+    parser.add_argument('-t',
+                        type=str,
+                        dest='thread_id',
+                        metavar='THREAD-ID',
+                        help='Thread ID')
 
     # Parse, verify, and return user-provided arguments
     if len(sys.argv) < 2:
@@ -38,7 +61,7 @@ def parse_arguments():
         return parser.parse_args()
 
 
-def show_board(args, api_endpoints):
+def show_board(board_id, api_endpoints):
     # Get board details from JSON API
     json_response = requests.get(api_endpoints['boards']).json()
 
@@ -46,10 +69,10 @@ def show_board(args, api_endpoints):
     try:
         board_dict = [
             details for details in json_response['boards']
-            if details['board'] == args.show_board
+            if details['board'] == board_id
         ][0]
     except IndexError as e:
-        print(f'Error: Unable to find board "{args.show_board}"')
+        print(f'Error: Unable to find board "{board_id}"')
         sys.exit(1)
 
     # Define board attributes and descriptions
@@ -106,14 +129,17 @@ def show_board(args, api_endpoints):
             print(f'{k}: {v}')
 
 
+def show_catalog(board_id, api_endpoints):
+    json_response = requests.get(api_endpoints['catalog']).json()
+
+
+def show_thread(thread_id, api_endpoints):
+    pass
+
+
 def main():
-    args = parse_arguments()
-    if args.verbose:
-        print('Using arguments:')
-        for argument, value in vars(args).items():
-            if value is not None:
-                print(f'{argument.title()}: {value}')
-        line_break()
+    # Parse arguments into dictionary
+    args = vars(parse_arguments())
 
     # Specify API endpoints
     api_endpoints = {
@@ -122,9 +148,22 @@ def main():
         'catalog': 'https://a.4cdn.org/BOARD/archive.json'
     }
 
-    # Process actions
-    if args.show_board is not None:
-        show_board(args, api_endpoints)
+    # Call function for appropriate action
+    if args['show_board']:
+        if args['board_id'] is not None:
+            show_board(args['board_id'], api_endpoints)
+        else:
+            print('Show board command requires board ID (-b)')
+    elif args['show_catalog']:
+        if args['board_id'] is not None:
+            show_catalog(args['board_id'], api_endpoints)
+        else:
+            print('Show catalog command requires board ID (-b)')
+    elif args['show_thread']:
+        if args['thread_id'] is not None:
+            show_thread(args['thread_id'], api_endpoints)
+        else:
+            print('Show thread command requires thread ID (-t)')
 
 
 if __name__ == '__main__':
