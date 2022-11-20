@@ -21,7 +21,7 @@ optional arguments:
 # To Do List
 ## 4chan
 - [X] Show board information
-- [ ] Show catalog information
+- [X] Show catalog information
 - [ ] Show thread information
 - [ ] Export thread
 - [ ] Support different export options for threads and attachments
