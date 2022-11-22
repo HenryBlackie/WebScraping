@@ -90,19 +90,18 @@ def parse_arguments():
 
 
 def parse_url(url):
-    # Extract board ID from URL string
-    # Board ID can be a alphanumeric value
-    # Regex: (?<=org\/)[A-z1-9]+
-    board_id = re.search(r'(?<=org\/)[A-z1-9]+', url)
-    if board_id is not None:
-        board_id = board_id.group()
+    # Extract required data from URL
+    # Board ID: (?<=org\/)[A-z1-9]+
+    # Thread ID: (?<=thread\/)\d+
+    url_data = re.findall(r'(?<=org\/)[A-z1-9]+|(?<=thread\/)\d+', url)
 
-    # Extract board ID from URL string
-    # Thread ID is an integer
-    # Regex: (?<=thread\/)\d+
-    thread_id = re.search(r'(?<=thread\/)\d+', url)
-    if thread_id is not None:
-        thread_id = thread_id.group()
+    # Split extracted data into variables
+    board_id = None
+    thread_id = None
+    if len(url_data) >= 1:
+        board_id = url_data[0]
+    if len(url_data) == 2:
+        thread_id = url_data[1]
 
     print(f'URL Board ID: {board_id}')
     print(f'URL Thread ID: {thread_id}')
