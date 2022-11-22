@@ -377,9 +377,11 @@ def main():
             print('Show thread command requires board and thread IDs.')
     elif args['show_thread_comments']:
         if args['thread_id'] is not None and args['board_id'] is not None:
-            show_thread_comments(args['board_id'], args['thread_id'], api_endpoints)
+            show_thread_comments(args['board_id'], args['thread_id'],
+                                 api_endpoints)
         else:
-            print('Show thread comments command requires board and thread IDs.')
+            print(
+                'Show thread comments command requires board and thread IDs.')
 
 
 if __name__ == '__main__':
