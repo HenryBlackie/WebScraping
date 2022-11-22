@@ -4,7 +4,7 @@ A collection of web scraping and data extraction scripts.
 # Usage
 ## 4chan
 ```
-usage: 4chan.py [-h] (-sB | -sC | -sT) [-b BOARD-ID] [-t THREAD-ID]
+usage: 4chan.py [-h] (-sB | -sC | -sT) [-u URL] [-b BOARD-ID] [-t THREAD-ID] [-d DELAY]
 
 Tool for extracting data through the read-only 4chan JSON API.
 
@@ -13,9 +13,12 @@ optional arguments:
   -sB, --show-board    Print board information and settings to console. Requires board ID (-b).
   -sC, --show-catalog  Print board catalog to console. This includes all thread and attribute details across each
                        page. Requires board ID (-b).
-  -sT, --show-thread   Print thread information to console. Requires thread ID (-t).
+  -sT, --show-thread   Print thread information to console. Requires thread ID (-t) and board ID (-b).
+  -u URL               The script will attempt to automatically extract the board (-b) and thread (-t) values from the
+                       provided URL.
   -b BOARD-ID          Board ID.
   -t THREAD-ID         Thread ID
+  -d DELAY             Seconds to wait between major operations such as displaying thread information. [Default: 0]
 ```
 
 # To Do List

@@ -1,10 +1,12 @@
+#import json
+#import pandas
+from pprint import pprint
 import argparse
 import html
-import json
 import os
+import re
 import requests
 import sys
-import re
 
 
 def line_break():
@@ -41,7 +43,16 @@ def parse_arguments():
         '-sT',
         '--show-thread',
         action='store_true',
-        help='Print thread information to console. Requires thread ID (-t).')
+        help=
+        'Print thread information to console. Requires thread ID (-t) and board ID (-b).'
+    )
+    parser.add_argument(
+        '-u',
+        type=str,
+        dest='url',
+        help=
+        'The script will attempt to automatically extract the board (-b) and thread (-t) values from the provided URL.'
+    )
     parser.add_argument('-b',
                         type=str,
                         dest='board_id',
@@ -52,6 +63,15 @@ def parse_arguments():
                         dest='thread_id',
                         metavar='THREAD-ID',
                         help='Thread ID')
+    parser.add_argument(
+        '-d',
+        type=int,
+        default=0,
+        dest='delay',
+        metavar='DELAY',
+        help=
+        'Seconds to wait between major operations such as displaying thread information. [Default: 0]'
+    )
 
     # Parse, verify, and return user-provided arguments
     if len(sys.argv) < 2:
@@ -60,6 +80,27 @@ def parse_arguments():
         sys.exit(1)
     else:
         return parser.parse_args()
+
+
+def parse_url(url):
+    # Extract board ID from URL string
+    # Board ID can be a alphanumeric value
+    # Regex: (?<=org\/)[A-z1-9]+
+    board_id = re.search(r'(?<=org\/)[A-z1-9]+', url)
+    if board_id is not None:
+        board_id = board_id.group()
+
+    # Extract board ID from URL string
+    # Thread ID is an integer
+    # Regex: (?<=thread\/)\d+
+    thread_id = re.search(r'(?<=thread\/)\d+', url)
+    if thread_id is not None:
+        thread_id = thread_id.group()
+
+    print(f'URL Board ID: {board_id}')
+    print(f'URL Thread ID: {thread_id}')
+
+    return board_id, thread_id
 
 
 def show_board(board_id, api_endpoints):
@@ -135,45 +176,46 @@ def show_catalog(board_id, api_endpoints):
     json_response = requests.get(request_url).json()
 
     # Define catalog attributes and descriptions
-    catalog_attributes = {'no': 'Numeric post ID',
-    'resto': 'ID of parent thread',
-    'sticky': 'Is thread pinned',
-    'closed': 'Is thread closed',
-    'now': 'Creation time in EST/EDT timezone',
-    'time': 'Creation time (UNIX)',
-    'name': 'Name user posted with',
-    'trip': 'User tripcode',
-    'id': 'Poster ID',
-    'capcode': 'Capcode identifier',
-    'country': 'Poster country code (ISO 3166-2 alpha-2)',
-    'country_name': 'Country name',
-    'sub': 'Subject text',
-    'com': 'Comment',
-    'tim': 'Image upload time (UNIX + microtime)',
-    'filename': 'Filename from device',
-    'ext': 'Filetype',
-    'fsize': 'Attachment size (bytes)',
-    'md5': 'Filehash (MD5)',
-    'w': 'Image width',
-    'h': 'Image height',
-    'tn_w': 'Thumbnail width',
-    'tn_h': 'Thumbnail height',
-    'filedeleted': 'Is file deleted',
-    'spoiler': 'Is image spoilered',
-    'custom_spoiler': 'Custom spoiler ID',
-    'omitted_posts': 'Total replies minus previewed replies',
-    'omitted_images': 'Total images minus previewed images',
-    'replies': 'Total replies',
-    'images': 'Total images',
-    'bumplimit': 'Bumplimit reached',
-    'imagelimit': 'Image limit reached',
-    'last_modified': 'Thread last modified (UNIX)',
-    'tag' : '.swf upload category',
-    'semantic_url': 'SEO URL slug',
-    'since4pass': 'Year 4chan pass purchased',
-    'unique_ips': 'Total unique posters',
-    'm_img': 'Mobile optimised image exists',
-    'last_replies': 'JSON representation of most recent replies to thread'
+    catalog_attributes = {
+        'no': 'Numeric post ID',
+        'resto': 'ID of parent thread',
+        'sticky': 'Is thread pinned',
+        'closed': 'Is thread closed',
+        'now': 'Creation time in EST/EDT timezone',
+        'time': 'Creation time (UNIX)',
+        'name': 'Name user posted with',
+        'trip': 'User tripcode',
+        'id': 'Poster ID',
+        'capcode': 'Capcode identifier',
+        'country': 'Poster country code (ISO 3166-2 alpha-2)',
+        'country_name': 'Country name',
+        'sub': 'Subject text',
+        'com': 'Comment',
+        'tim': 'Image upload time (UNIX + microtime)',
+        'filename': 'Filename from device',
+        'ext': 'Filetype',
+        'fsize': 'Attachment size (bytes)',
+        'md5': 'Filehash (MD5)',
+        'w': 'Image width',
+        'h': 'Image height',
+        'tn_w': 'Thumbnail width',
+        'tn_h': 'Thumbnail height',
+        'filedeleted': 'Is file deleted',
+        'spoiler': 'Is image spoilered',
+        'custom_spoiler': 'Custom spoiler ID',
+        'omitted_posts': 'Total replies minus previewed replies',
+        'omitted_images': 'Total images minus previewed images',
+        'replies': 'Total replies',
+        'images': 'Total images',
+        'bumplimit': 'Bumplimit reached',
+        'imagelimit': 'Image limit reached',
+        'last_modified': 'Thread last modified (UNIX)',
+        'tag': '.swf upload category',
+        'semantic_url': 'SEO URL slug',
+        'since4pass': 'Year 4chan pass purchased',
+        'unique_ips': 'Total unique posters',
+        'm_img': 'Mobile optimised image exists',
+        'last_replies': 'JSON representation of most recent replies to thread'
     }
 
     # Print catalog information
@@ -195,7 +237,6 @@ def show_catalog(board_id, api_endpoints):
                     v_list = [f'\t{v_k}: {v_v}\n' for v_k, v_v in v.items()]
                     v = '\n\t' + ''.join(v_list).strip()
 
-
                 # Print thread details to console
                 # Use attribute description when possible
                 try:
@@ -204,19 +245,81 @@ def show_catalog(board_id, api_endpoints):
                     print(f'{k}: {v}')
 
 
-def show_thread(thread_id, api_endpoints):
-    pass
+def show_thread(board_id, thread_id, api_endpoints):
+    request_url = re.sub('THREAD', thread_id, api_endpoints['thread'])
+    request_url = re.sub('BOARD', board_id, request_url)
+    json_response = requests.get(request_url).json()
+
+    # Define thread attributes and descriptions
+    thread_attributes = {
+        'no': 'Numeric post ID',
+        'resto': 'ID of parent thread',
+        'sticky': 'Is thread pinned',
+        'closed': 'Is thread closed',
+        'now': 'Creation time in EST/EDT timezone',
+        'time': 'Creation time (UNIX)',
+        'name': 'Name user posted with',
+        'trip': 'User tripcode',
+        'id': 'Poster ID',
+        'capcode': 'Capcode identifier',
+        'country': 'Poster country code (ISO 3166-2 alpha-2)',
+        'country_name': 'Country name',
+        'board_flag': 'Board flag code',
+        'flag name': 'Board flag name',
+        'sub': 'Subject text',
+        'com': 'Comment',
+        'tim': 'Image upload time (UNIX + microtime)',
+        'filename': 'Filename from device',
+        'ext': 'Filetype',
+        'fsize': 'Attachment size (bytes)',
+        'md5': 'Filehash (MD5)',
+        'w': 'Image width',
+        'h': 'Image height',
+        'tn_w': 'Thumbnail width',
+        'tn_h': 'Thumbnail height',
+        'filedeleted': 'Is file deleted',
+        'spoiler': 'Is image spoilered',
+        'custom_spoiler': 'Custom spoiler ID',
+        'replies': 'Total replies',
+        'images': 'Total images',
+        'bumplimit': 'Bumplimit reached',
+        'imagelimit': 'Image limit reached',
+        'last_modified': 'Thread last modified (UNIX)',
+        'tag': '.swf upload category',
+        'semantic_url': 'SEO URL slug',
+        'since4pass': 'Year 4chan pass purchased',
+        'unique_ips': 'Total unique posters',
+        'm_img': 'Mobile optimised image exists',
+        'archived': 'Is thread archived',
+        'archived_on': 'UNIX timestamp post was archived'
+    }
+
+    # Update JSON data to a more human readable format
+    print(f'--- Thread {thread_id} ---')
+    for idx, post in enumerate(json_response['posts']):
+        print(f'-- Post {idx + 1} --')
+        for k, v in post.items():
+            if type(v) == str:
+                v = html.unescape(v)
+
+            if k == 'com':
+                v = f'\n\t{v}'
+
+            print(f'{thread_attributes[k]}: {v}')
 
 
 def main():
     # Parse arguments into dictionary
     args = vars(parse_arguments())
+    if args['url'] is not None:
+        args['board_id'], args['thread_id'] = parse_url(args['url'])
 
     # Specify API endpoints
     api_endpoints = {
         'archive': 'https://a.4cdn.org/BOARD/archive.json',
         'boards': 'https://a.4cdn.org/boards.json',
-        'catalog': 'https://a.4cdn.org/BOARD/catalog.json'
+        'catalog': 'https://a.4cdn.org/BOARD/catalog.json',
+        'thread': 'https://a.4cdn.org/BOARD/thread/THREAD.json'
     }
 
     # Call function for appropriate action
@@ -231,8 +334,8 @@ def main():
         else:
             print('Show catalog command requires board ID (-b)')
     elif args['show_thread']:
-        if args['thread_id'] is not None:
-            show_thread(args['thread_id'], api_endpoints)
+        if args['thread_id'] is not None and args['board_id'] is not None:
+            show_thread(args['board_id'], args['thread_id'], api_endpoints)
         else:
             print('Show thread command requires thread ID (-t)')
 
