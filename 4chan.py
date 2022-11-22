@@ -46,6 +46,13 @@ def parse_arguments():
         help=
         'Print thread information to console. Requires thread ID (-t) and board ID (-b).'
     )
+    action_group.add_argument(
+        '-sTC',
+        '--show-thread-comments',
+        action='store_true',
+        help=
+        'Print thread comments to console. Requires thread ID (-t) and board ID (-b).'
+    )
     parser.add_argument(
         '-u',
         type=str,
@@ -308,6 +315,36 @@ def show_thread(board_id, thread_id, api_endpoints):
             print(f'{thread_attributes[k]}: {v}')
 
 
+def show_thread_comments(board_id, thread_id, api_endpoints):
+    request_url = re.sub('THREAD', thread_id, api_endpoints['thread'])
+    request_url = re.sub('BOARD', board_id, request_url)
+    json_response = requests.get(request_url).json()
+
+    # Define thread attributes and descriptions
+    thread_attributes = {
+        'no': 'Numeric post ID',
+        'name': 'Name user posted with',
+        'com': 'Comment'
+    }
+
+    thread_data = []
+    for post in json_response['posts']:
+        post_dict = {}
+        for k, v in post.items():
+            if k in thread_attributes.keys():
+                if k == 'com':
+                    # Unescape HTML characters
+                    v = html.unescape(''.join(v))
+                    # Remove HTML tags from comments
+                    v = re.sub(r'<[^>]*>', '', v)
+                post_dict[k] = v
+        thread_data.append(post_dict)
+
+    for post in thread_data:
+        print(f'-- {post["no"]} {post["name"]} --')
+        print(post['com'])
+
+
 def main():
     # Parse arguments into dictionary
     args = vars(parse_arguments())
@@ -337,7 +374,12 @@ def main():
         if args['thread_id'] is not None and args['board_id'] is not None:
             show_thread(args['board_id'], args['thread_id'], api_endpoints)
         else:
-            print('Show thread command requires thread ID (-t)')
+            print('Show thread command requires board and thread IDs.')
+    elif args['show_thread_comments']:
+        if args['thread_id'] is not None and args['board_id'] is not None:
+            show_thread_comments(args['board_id'], args['thread_id'], api_endpoints)
+        else:
+            print('Show thread comments command requires board and thread IDs.')
 
 
 if __name__ == '__main__':
