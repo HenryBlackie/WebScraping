@@ -155,11 +155,16 @@ def download_thread(args, api_endpoint):
         current_length = len(df)
         if current_length > old_length:
             df.to_csv(f'{output_dir}/comments.csv')
-            print(
-                f'[+] Saved {current_length - old_length} new thread comments')
+            if current_length - old_length == 1:
+                print(f'[+] Saved {current_length - old_length} new comment')
+            else:
+                print(f'[+] Saved {current_length - old_length} new comments')
     else:
         df.to_csv(f'{output_dir}/comments.csv')
-        print(f'[+] Saved {len(df)} thread comments')
+        if len(df) == 1:
+            print(f'[+] Saved {len(df)} comment')
+        else:
+            print(f'[+] Saved {len(df)} comments')
 
     # Save post attachments
     for post in json_response['posts']:
